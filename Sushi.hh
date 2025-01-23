@@ -1,9 +1,10 @@
 #pragma once
 #include <string> 
+#include <vector>
 
 class Sushi {
 private:
-  int history; // `int` is a placehoder; replace it with a type of your choice
+  std::vector<std::string> history; // Change history type to vector
   static const size_t HISTORY_LENGTH;
   static const size_t MAX_INPUT;
 
