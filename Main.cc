@@ -22,8 +22,8 @@ int main(int argc, char *argv[])
     }
 
     // Construct the full path to the sushi.conf file
-    std::string config_path = std::string(home_dir) + "/sushi.conf";
-
+    std::string config_path =  "sushi.conf";
+    std::cout << "Attempting to open configuration file: " << config_path << std::endl;
     Sushi sushi;
 
     // Read commands from the sushi.conf file if it exists

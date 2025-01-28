@@ -8,10 +8,10 @@ const size_t Sushi::MAX_INPUT = 256;
 const size_t Sushi::HISTORY_LENGTH = 10;
 const std::string Sushi::DEFAULT_PROMPT = "sushi> ";
 
-std::string read_line(std::istream &in){
+std::string Sushi::read_line(std::istream &in){
   std::string line;
   char c;
-  size_t count =0;
+  size_t count = 0;
 
   while (in.get(c)){
 	  if (c == '\n') break;
@@ -22,11 +22,11 @@ std::string read_line(std::istream &in){
   if (in.fail() && !in.eof()){
 	  // Handle I/O errors
 	  std::perror("Error when reading input!");
-	  return nullptr;
+	  return "";
   }
 
   //Handle lines exceeds max input
-  if (count > MAX_INPUT){
+  if (count > Sushi::getMAXINPUT()){
 	  while (in.get(c) && c != '\n');
 	  std::cerr << "Line too long, truncated." << std::endl;
   return "";
@@ -65,7 +65,7 @@ bool Sushi::read_config(const char *fname, bool ok_if_missing){
 }
 
 void Sushi::store_to_history(std::string line){
-	if (line.empty()) return; // Check nullptr 
+	if (line.empty()) return; // Check nullptr or empty 
 	history.insert(history.begin(),line); // Insert the new line to the beginning
 	if (history.size() > HISTORY_LENGTH) { // Check if the history size is exceeds the HISTORY_LENGTH
 		history.pop_back(); // Discard the oldest entry

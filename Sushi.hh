@@ -14,7 +14,9 @@ public:
   bool read_config(const char *fname, bool ok_if_missing);
   void store_to_history(std::string line);
   void show_history();
-
+  static size_t getMAXINPUT(){
+	return MAX_INPUT;
+  }
   static const std::string DEFAULT_PROMPT;
 };
 
