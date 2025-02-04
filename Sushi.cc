@@ -13,6 +13,7 @@ std::string Sushi::read_line(std::istream &in){
   char c;
   size_t count = 0;
 
+  // DZ: Very inefficient; Why not use std::getline? 
   while (in.get(c)){
 	  if (c == '\n') break;
 	  line +=c;
@@ -25,8 +26,11 @@ std::string Sushi::read_line(std::istream &in){
 	  return "";
   }
 
+  // DZ: This is incorrect. The line has been already read in full.
   //Handle lines exceeds max input
-  if (count > Sushi::getMAXINPUT()){
+  // DZ: No need to call a function
+  if (count > MAX_INPUT){
+  //if (count > Sushi::getMAXINPUT()){
 	  while (in.get(c) && c != '\n');
 	  std::cerr << "Line too long, truncated." << std::endl;
   return "";
@@ -46,21 +50,29 @@ bool Sushi::read_config(const char *fname, bool ok_if_missing){
 	std::ifstream file(fname);
 
 	if(!file && !ok_if_missing){
-		std::perror("Error opening file");
+	  // DZ: Wrong use of perror
+	  //std::perror("Error opening file");
+	  std::perror(fname);
 		return false;
 	}
 	if (!file && ok_if_missing) return true;
 	std::string line;
 	while(true){
 		line = read_line(file);
-		if (line.empty()) break;
+		if (line.empty()) {
+		  // DZ: wrong condition, stops the loop at the first blank line
+		  break;
+		}
+		// DZ: This does not belong here
 		store_to_history(line);
 	}
 	if (file.bad()){
+	  // DZ: See above
 		std::perror("Error reading file");
 		return false;
 	}
-	file.close();
+	// DZ: C++ closes local ifstream automatically
+	// file.close();
 	return true;
 }
 
@@ -75,10 +87,22 @@ void Sushi::store_to_history(std::string line){
 
 void Sushi::show_history(){
   for (size_t i = 0; i<history.size(); ++i){
+    // DZ: You do not need std::ostringstream for this
 	  std::ostringstream index_stream;
 	  index_stream.width(5);
 	  index_stream.fill(' ');
 	  index_stream << (i+1);
+	  // DZ: Must be TWO spaces
 	  std::cout << index_stream.str() << " "<<history[i]<<std::endl;
   }
+}
+
+void Sushi::set_exit_flag()
+{
+  // To be implemented
+}
+
+bool Sushi::get_exit_flag() const
+{
+  return false; // To be fixed
 }
