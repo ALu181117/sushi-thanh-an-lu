@@ -20,12 +20,14 @@ int main(int argc, char *argv[])
   std::string config_path = std::string(home_dir) + "/" + Sushi::DEFAULT_CONFIG;
   // OK if missing!
   my_shell.read_config(config_path.c_str(), true);
-
-  std::cout << Sushi::DEFAULT_PROMPT;
-  std::string command = Sushi::read_line(std::cin);
-
-  my_shell.store_to_history(command);
-  my_shell.show_history();
-  
+  // New code add here
+  while (!my_shell.get_exit_flag()){
+  	std::cout << Sushi::DEFAULT_PROMPT;
+  	std::string command = Sushi::read_line(std::cin);
+	int result = Sushi::parse_command(command);
+  	if (result == 0) my_shell.store_to_history(command);
+	//if (command == "history")  my_shell.show_history(); (If exist, the history command will show 2 times the history)
+  	if (command == "exit") my_shell.set_exit_flag();
+  }
   return EXIT_SUCCESS;
 }

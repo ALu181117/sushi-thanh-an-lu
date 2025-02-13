@@ -44,7 +44,11 @@ bool Sushi::read_config(const char *fname, bool ok_if_missing)
   // Read the config file
   while(!config_file.eof()) {
     std::string line = read_line(config_file);
-    store_to_history(line);
+	// New modified add here
+    int valid_or_invalid = parse_command(line);
+    if (valid_or_invalid == 0){
+	store_to_history(line);
+    }
   }
   
   return true; 
@@ -74,10 +78,10 @@ void Sushi::show_history() const
 
 void Sushi::set_exit_flag()
 {
-  // To be implemented
+  exit_flag = true;
 }
 
 bool Sushi::get_exit_flag() const
 {
-  return false; // To be fixed
+  return exit_flag;
 }
