@@ -11,9 +11,13 @@ int main(int argc, char *argv[])
   UNUSED(argc);
   UNUSED(argv);
 
+  // New function call
+  Sushi::prevent_interruption();
+
   const char *home_dir = std::getenv("HOME");
   if (!home_dir) {
     std::cerr << "Error: HOME environment variable not set." << std::endl;
+    // DZ: This is NOT a failure
     return EXIT_FAILURE;
   }
 
@@ -27,7 +31,8 @@ int main(int argc, char *argv[])
 	int result = Sushi::parse_command(command);
   	if (result == 0) my_shell.store_to_history(command);
 	//if (command == "history")  my_shell.show_history(); (If exist, the history command will show 2 times the history)
-  	if (command == "exit") my_shell.set_exit_flag();
+	// DZ: The parses takes care of this
+  	// if (command == "exit") my_shell.set_exit_flag();
   }
   return EXIT_SUCCESS;
 }

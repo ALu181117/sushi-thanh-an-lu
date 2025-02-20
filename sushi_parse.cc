@@ -9,29 +9,29 @@ std::string *Sushi::unquote_and_dup(const char* s){
 		char next = s[i+1];
 		switch(next) {
 			case 'a':
-			*result += '\a';
+			  *result += '\a'; break;  // DZ: SERIOUS error!
 			case 'b':
-			*result += '\b';
+			*result += '\b'; break;  // DZ: SERIOUS error!
 			case 'e':
-			*result += '\e';
+			*result += '\x1B'/*'\e'*/; break;  // DZ: SERIOUS error!
 			case 'f':
-                        *result += '\f';
+                        *result += '\f'; break;  // DZ: SERIOUS error!
                         case 'n':
-                        *result += '\n';
+                        *result += '\n'; break;  // DZ: SERIOUS error!
                         case 'r':
-                        *result +='\r';
+                        *result +='\r'; break;  // DZ: SERIOUS error!
 			case 't':
-                        *result += '\t';
+                        *result += '\t'; break;  // DZ: SERIOUS error!
                         case 'v':
-                        *result += '\v';
+                        *result += '\v'; break;  // DZ: SERIOUS error!
                         case '\\': //Might be wrong
-                        *result += '\\';
+                        *result += '\\'; break;  // DZ: SERIOUS error!
 			case '\'': //Might be wrong
-                        *result += '\'';
+                        *result += '\''; break;  // DZ: SERIOUS error!
                         case '\"': //Might be wrong
-                        *result += '\"';
+                        *result += '\"'; break;  // DZ: SERIOUS error!
 			default:
-			*result += s[i];
+			*result += s[i]; break;  // DZ: SERIOUS error!
 		}
 	}
 	else *result += s[i];
@@ -40,7 +40,7 @@ std::string *Sushi::unquote_and_dup(const char* s){
 }
 
 void Sushi::re_parse(int i) {
-  if (i == 0 || i > history.size()) {
+  if (i == 0 || i > static_cast<int>(history.size())) {
 	std::cerr << "Error: !"<< history[i] <<": event not found" << std::endl;
 	return;
   }
