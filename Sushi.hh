@@ -32,9 +32,7 @@ private:
 
   // Helper methods
   // Converts the args to whatever `execvp` expects
-  char* const* vector2array();
   // Frees the memory allocated by vector2array()
-  void free_array(char *const argv[]);
 
 public:
   Program(std::vector<std::string*> *args) : args(args) {};
@@ -42,6 +40,8 @@ public:
   void set_pipe(Program *pipe) { this->pipe = pipe; };
   void set_redir(Redirection &redir) { this->redir = redir; };
   std::string progname() { return *args->at(0); }
+  char* const* vector2array();
+  void free_array(char *const argv[]);
 };
 
 // Old class(es)
@@ -52,7 +52,7 @@ private:
   static const size_t HISTORY_LENGTH = 10;
   static const size_t MAX_INPUT_SIZE = 256;
   bool exit_flag = false; 
-
+  std::string redo;
 public:
   Sushi() : history() {};
   static std::string read_line(std::istream &in);
@@ -62,6 +62,7 @@ public:
   void store_to_history(std::string line);
   void show_history() const;
   void re_parse(int i);
+  bool re_execute();
   void set_exit_flag(); 
   bool get_exit_flag() const;
   static int parse_command(const std::string command);

@@ -4,6 +4,12 @@
 #include <iomanip>
 #include <cstdio>
 #include "Sushi.hh"
+#include <csignal>
+#include <string>
+#include <cstring>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 std::string Sushi::read_line(std::istream &in)
 {
@@ -67,7 +73,6 @@ void Sushi::store_to_history(std::string line)
   
   history.emplace_back(line);
 }
-
 void Sushi::show_history() const
 {
   int index = 1;
@@ -90,32 +95,60 @@ bool Sushi::get_exit_flag() const
 // New methods
 int Sushi::spawn(Program *exe, bool bg)
 {
-  // Must be implemented
-  UNUSED(exe);
-  UNUSED(bg);
-
-  return EXIT_SUCCESS;
+  (void)bg;
+  int pid = fork();
+  if (pid == -1){
+	std::perror("folk");
+	return EXIT_FAILURE;
+  }
+  if (pid == 0){
+	char* const* argv = exe->vector2array();
+	if(execvp(argv[0],argv) == -1){
+	  std::perror("execvp");
+	  exit(EXIT_FAILURE);
+	}
+	exe->free_array(argv);
+  }else{
+	int status;
+	if(waitpid(pid,&status,0) == -1) {
+	  std::perror("waitpid");
+	  return EXIT_FAILURE;
+	}
+  } return 1;
 }
 
 void Sushi::prevent_interruption() {
-  // Must be implemented
+  struct sigaction interrupt_action;
+  interrupt_action.sa_handler = Sushi::refuse_to_die;
+  interrupt_action.sa_flags = SA_RESTART;
+  sigaction(SIGINT, &interrupt_action, NULL);
 }
 
 void Sushi::refuse_to_die(int signo) {
-  // Must be implemented
-  UNUSED(signo);
+  if (signo == SIGINT){
+	std::cerr<<"\nType exit to exit the shell"<<std::endl;
+  }
 }
 
 char* const* Program::vector2array() {
-  // Must be implemented
-  return nullptr; 
+  char** argv = new char*[args->size()+1];
+  for (size_t i = 0; i < args->size(); ++i){
+	size_t len = args->at(i)->size();
+	argv[i] = new char[len+1];
+	std::memcpy(argv[i], args->at(i)->c_str(), len+1);
+  }
+  argv[args->size()] = nullptr;
+  return argv;
 }
 
-void Program::free_array(char *const argv[]) {
-  // Must be implemented
-  UNUSED(argv);
+void Program::free_array(char* const argv[]) {
+  for (size_t i = 0; argv[i] != nullptr; ++i){
+	free(argv[i]);
+  }
+  delete[] argv;
 }
 
 Program::~Program() {
   // Do not implement now
 }
+

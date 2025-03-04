@@ -9,34 +9,45 @@ std::string *Sushi::unquote_and_dup(const char* s){
 		char next = s[i+1];
 		switch(next) {
 			case 'a':
-			  *result += '\a'; break;  // DZ: SERIOUS error!
+			  *result += '\a'; break; 
 			case 'b':
-			*result += '\b'; break;  // DZ: SERIOUS error!
+			*result += '\b'; break;  
 			case 'e':
-			*result += '\x1B'/*'\e'*/; break;  // DZ: SERIOUS error!
+			*result += '\x1B'; break; 
 			case 'f':
-                        *result += '\f'; break;  // DZ: SERIOUS error!
+                        *result += '\f'; break;
                         case 'n':
-                        *result += '\n'; break;  // DZ: SERIOUS error!
+                        *result += '\n'; break;
                         case 'r':
-                        *result +='\r'; break;  // DZ: SERIOUS error!
+                        *result +='\r'; break; 
 			case 't':
-                        *result += '\t'; break;  // DZ: SERIOUS error!
+                        *result += '\t'; break;
                         case 'v':
-                        *result += '\v'; break;  // DZ: SERIOUS error!
-                        case '\\': //Might be wrong
-                        *result += '\\'; break;  // DZ: SERIOUS error!
-			case '\'': //Might be wrong
-                        *result += '\''; break;  // DZ: SERIOUS error!
-                        case '\"': //Might be wrong
-                        *result += '\"'; break;  // DZ: SERIOUS error!
+                        *result += '\v'; break;
+                        case '\\':
+                        *result += '\\'; break;
+			case '\'': 
+                        *result += '\''; break;
+                        case '\"':
+                        *result += '\"'; break;
 			default:
-			*result += s[i]; break;  // DZ: SERIOUS error!
+			*result += s[i]; break;
 		}
 	}
 	else *result += s[i];
   }
   return result;
+}
+
+bool Sushi::re_execute() {
+  if(!redo.empty()) {
+	if (!parse_command(redo)) {
+	   store_to_history(redo);
+	}
+  redo = "";
+  return true;
+  }
+  return false;
 }
 
 void Sushi::re_parse(int i) {
