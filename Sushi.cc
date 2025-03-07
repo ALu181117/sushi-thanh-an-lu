@@ -3,6 +3,9 @@
 #include <algorithm>
 #include <iomanip>
 #include <cstdio>
+#include <csignal>
+#include <cassert>
+#include <sys/wait.h>
 #include "Sushi.hh"
 
 std::string Sushi::read_line(std::istream &in)
@@ -94,34 +97,70 @@ bool Sushi::get_exit_flag() const
   return exit_flag;
 }
 
-//---------------------------------------------------------
-// New methods
 int Sushi::spawn(Program *exe, bool bg)
 {
-  // Must be implemented
-  UNUSED(exe);
   UNUSED(bg);
+  
+  pid_t pid = fork();
 
+  if (pid == -1) { // Failed to fork
+    std::perror("fork");
+    return EXIT_FAILURE;
+  }
+
+  if (pid == 0) { // Child    
+    char* const* args = exe->vector2array(); // No need to delete this array!
+    assert(args);
+    
+    execvp(args[0], args);
+    std::perror(args[0]);
+    // Do not run atexit handlers and flush buffers
+    _exit(EXIT_FAILURE);
+  }
+
+  // Parent
+  int status;
+  if(waitpid(pid, &status, 0) != pid) {
+    std::perror("waitpid");
+    return EXIT_FAILURE;
+  }
   return EXIT_SUCCESS;
 }
 
 void Sushi::prevent_interruption() {
-  // Must be implemented
+  struct sigaction sa;
+  sa.sa_handler = refuse_to_die;
+  // Restart the read() system call
+  sa.sa_flags = SA_RESTART;
+  if(sigaction(SIGINT, &sa, nullptr) != 0) {
+    std::perror("sigaction");
+    std::exit(EXIT_FAILURE);
+  }
 }
 
 void Sushi::refuse_to_die(int signo) {
-  // Must be implemented
   UNUSED(signo);
+  std::cerr << "Type exit to exit the shell" << '\n';
+}
+
+void Sushi::mainloop() {
+  // Must be implemented
 }
 
 char* const* Program::vector2array() {
-  // Must be implemented
-  return nullptr; 
-}
-
-void Program::free_array(char *const argv[]) {
-  // Must be implemented
-  UNUSED(argv);
+  // std::vector<std::string*> *args -> char *const argv[]
+  assert(args);
+  
+  size_t size = args->size();
+  char** array = new char*[size + 1]; // Allocate an array of char*
+  
+  for (size_t i = 0; i < size; ++i) {
+    assert((*args)[i]);
+    array[i] = const_cast<char*>((*args)[i]->c_str()); // Copy string content
+  }
+  
+  array[size] = nullptr; // Null-terminate the array
+  return array;
 }
 
 Program::~Program() {
