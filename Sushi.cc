@@ -104,7 +104,9 @@ int Sushi::spawn(Program *exe, bool bg)
   if (pid == 0){
 	char* const* argv = exe->vector2array();
 	if(execvp(argv[0],argv) == -1){
-	  std::perror("execvp");
+	  // DZ: Incorerct use of perror
+	  // std::perror("execvp");
+	  std::perror(argv[0]);
 	  exit(EXIT_FAILURE);
 	}
 	exe->free_array(argv);
@@ -130,9 +132,14 @@ void Sushi::refuse_to_die(int signo) {
   }
 }
 
+void Sushi::mainloop() {
+  // Must be implemented
+}
+
 char* const* Program::vector2array() {
   char** argv = new char*[args->size()+1];
   for (size_t i = 0; i < args->size(); ++i){
+    // DZ: Do not copy data without necessity. It's a `char* CONST*`
 	size_t len = args->at(i)->size();
 	argv[i] = new char[len+1];
 	std::memcpy(argv[i], args->at(i)->c_str(), len+1);
@@ -142,6 +149,7 @@ char* const* Program::vector2array() {
 }
 
 void Program::free_array(char* const argv[]) {
+  // DZ: See above
   for (size_t i = 0; argv[i] != nullptr; ++i){
 	free(argv[i]);
   }

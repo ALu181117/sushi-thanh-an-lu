@@ -2,17 +2,17 @@
 #include "Sushi.hh"
 
 // Initialize the static constants
-Sushi my_shell; // New global var
+Sushi my_shell; 
 const std::string Sushi::DEFAULT_PROMPT = "sushi> ";
 const std::string Sushi::DEFAULT_CONFIG = "sushi.conf";
 
 int main(int argc, char *argv[])
 {
-  UNUSED(argc);
-  UNUSED(argv);
-
-  // New function call
-  Sushi::prevent_interruption();
+  // Use argc and argv!
+  
+  // Move this into the constructor
+  //-------------------------------------------
+   Sushi::prevent_interruption();
 
   const char *home_dir = std::getenv("HOME");
   if (!home_dir) {
@@ -24,7 +24,10 @@ int main(int argc, char *argv[])
   std::string config_path = std::string(home_dir) + "/" + Sushi::DEFAULT_CONFIG;
   // OK if missing!
   my_shell.read_config(config_path.c_str(), true);
-  // New code add here
+  //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  // Move this into the main loop method
+  //-------------------------------------------
   while (!my_shell.get_exit_flag()){
   	std::cout << Sushi::DEFAULT_PROMPT;
   	std::string command = Sushi::read_line(std::cin);
@@ -35,5 +38,8 @@ int main(int argc, char *argv[])
 	  }
 	}
   }
+  //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  my_shell.mainloop();
   return EXIT_SUCCESS;
 }

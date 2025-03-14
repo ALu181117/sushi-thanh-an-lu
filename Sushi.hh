@@ -1,12 +1,8 @@
 #pragma once
-#include <iostream> // New include
-#include <string> 
+#include <iostream> 
 #include <deque>
+#include <vector> 
 
-//--------------------------------------------------------------------
-#include <vector> // New include
-
-// New class
 // I/O redirections, as in "foobar < foo > bar"
 class Redirection {
 private:
@@ -22,7 +18,6 @@ public:
   }
 };
 
-// New class
 // The program to be executed
 class Program {
 private:
@@ -44,8 +39,6 @@ public:
   void free_array(char *const argv[]);
 };
 
-// Old class(es)
-//--------------------------------------------------------------------
 class Sushi {
 private:
   std::deque<std::string> history; 
@@ -58,6 +51,7 @@ public:
   static std::string read_line(std::istream &in);
   static std::string *unquote_and_dup(const char *s);
   static std::string *getenv(const char *name);
+  static void putenv(const std::string *name, const std::string *value); // New method
   bool read_config(const char *fname, bool ok_if_missing);
   void store_to_history(std::string line);
   void show_history() const;
@@ -67,9 +61,10 @@ public:
   bool get_exit_flag() const;
   static int parse_command(const std::string command);
   
-  int spawn(Program *exe, bool bg); // New method
-  static void prevent_interruption(); // New method
-  static void refuse_to_die(int signo); // New method
+  void mainloop(); // New method
+  int spawn(Program *exe, bool bg); 
+  static void prevent_interruption(); 
+  static void refuse_to_die(int signo); 
     
   static const std::string DEFAULT_PROMPT;
   static const std::string DEFAULT_CONFIG;
