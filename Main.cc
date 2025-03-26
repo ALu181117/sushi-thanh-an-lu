@@ -2,42 +2,22 @@
 #include "Sushi.hh"
 
 // Initialize the static constants
-Sushi my_shell; 
 const std::string Sushi::DEFAULT_PROMPT = "sushi> ";
 const std::string Sushi::DEFAULT_CONFIG = "sushi.conf";
+Sushi my_shell; 
 
-int main(int argc, char *argv[])
-{
-  // Use argc and argv!
-  
-  // Move this into the constructor
-  //-------------------------------------------
-  Sushi::prevent_interruption();
-  
-  const char *home_dir = std::getenv("HOME");
-  // OK if missing!
-  if (home_dir) {
-    std::string config_path = std::string(home_dir) + "/" + Sushi::DEFAULT_CONFIG;
-    my_shell.read_config(config_path.c_str(), true);
-  }
-  //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-  // Move this into the main loop method
-  //-------------------------------------------
-  while(!my_shell.get_exit_flag()) {
-    std::cout << Sushi::DEFAULT_PROMPT;
-    std::string command = Sushi::read_line(std::cin);
-    if(!Sushi::parse_command(command)) {
-      // Re-execute from history if needed
-      if(!my_shell.re_execute()) {
-	// Do not insert the bangs (!)
-	my_shell.store_to_history(command);
-      }
+int main(int argc, char *argv[]){
+  for (int i = 1; i < argc; ++i) {
+    if (!my_shell.read_config(argv[i], false)) {
+      std::cerr << "Error: Failed to process script '" << argv[i] << "'" << std::endl;
+      return EXIT_FAILURE;
+    }
+    if (my_shell.get_exit_flag()){
+      return EXIT_SUCCESS;
     }
   }
-  //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-  // my_shell.mainloop();
-  
+  if (argc == 1 && !my_shell.get_exit_flag()) {
+    my_shell.mainloop();
+  }
   return EXIT_SUCCESS;
 }

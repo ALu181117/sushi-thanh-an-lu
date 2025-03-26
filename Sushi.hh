@@ -52,7 +52,15 @@ private:
   std::string redo;
 
 public:
-  Sushi() : history() {};
+  
+  Sushi() : history() {
+  Sushi::prevent_interruption();
+  const char *home_dir = std::getenv("HOME");
+  if (home_dir) {
+    std::string config_path = std::string(home_dir) + "/" + Sushi::DEFAULT_CONFIG;
+    Sushi::read_config(config_path.c_str(), true);
+    }
+  };
   static std::string read_line(std::istream &in);
   static std::string *unquote_and_dup(const char *s); 
   static std::string *getenv(const char *name); // New method
