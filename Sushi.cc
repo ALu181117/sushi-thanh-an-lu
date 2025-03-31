@@ -3,13 +3,23 @@
 #include <algorithm>
 #include <iomanip>
 #include <cstdio>
-#include "Sushi.hh"
 #include <csignal>
-#include <string>
-#include <cstring>
-#include <sys/types.h>
+#include <cassert>
 #include <sys/wait.h>
-#include <unistd.h>
+#include "Sushi.hh"
+
+Sushi::Sushi()
+{
+  prevent_interruption();
+  
+  const char *home_dir = std::getenv("HOME");
+  
+  // OK if missing!
+  if (home_dir) {
+    const std::string config_path = std::string(home_dir) + "/" + DEFAULT_CONFIG;
+    read_config(config_path.c_str(), true);
+  }
+}
 
 std::string Sushi::read_line(std::istream &in)
 {
@@ -18,12 +28,13 @@ std::string Sushi::read_line(std::istream &in)
     if(!in.eof()) { 
       std::perror("getline");
     }
-    return "";
+    return {};
   }
     
   // Is the line empty?
-  if(std::all_of(line.begin(), line.end(), isspace)) {
-    return "";
+  if(std::all_of(line.begin(), line.end(),
+		 [](unsigned char c) { return std::isspace(c); })) {
+    return {};
   }
 
   // Is the line too long?
@@ -48,12 +59,11 @@ bool Sushi::read_config(const char *fname, bool ok_if_missing)
   }
 
   // Read the config file
+  std::string line;
   while(!config_file.eof()) {
-    std::string line = read_line(config_file);
-	// New modified add here
-    int valid_or_invalid = parse_command(line);
-    if (valid_or_invalid == 0){
-	store_to_history(line);
+    line = read_line(config_file);
+    if(!parse_command(line)) {
+      store_to_history(line);
     }
   }
   
@@ -62,6 +72,7 @@ bool Sushi::read_config(const char *fname, bool ok_if_missing)
 
 void Sushi::store_to_history(std::string line)
 {
+  // Do not insert empty lines
   if (line.empty()) {
     return;    
   }
@@ -73,12 +84,22 @@ void Sushi::store_to_history(std::string line)
   
   history.emplace_back(line);
 }
-void Sushi::show_history() const
+
+void Sushi::show_history()
 {
   int index = 1;
+
+  // `history` itself will be inserted
+  if (history.size() == HISTORY_LENGTH) {
+    history.pop_front();
+  }
+  
   for (const auto &cmd: history) {
     std::cout << std::setw(5) << index++ << "  " << cmd << std::endl;
   }
+  
+  // `history` itself will be inserted
+  std::cout << std::setw(5) << index++ << "  " << "history" << std::endl;
 }
 
 void Sushi::set_exit_flag()
@@ -91,72 +112,88 @@ bool Sushi::get_exit_flag() const
   return exit_flag;
 }
 
-//---------------------------------------------------------
-// New methods
 int Sushi::spawn(Program *exe, bool bg)
+{  
+  const pid_t pid = fork();
+
+  if (pid < 0) { // Failed to fork
+    std::perror("fork");
+    return EXIT_FAILURE;
+  }
+
+  if (pid == 0) { // Child    
+    char* const* args = exe->vector2array(); // No need to delete this array!
+    assert(args);
+    
+    execvp(args[0], args);
+    std::perror(args[0]);
+    // Do not run atexit handlers and flush buffers
+    _exit(EXIT_FAILURE);
+  }
+
+  // Parent handles foreground execution, if necessary
+  int status = 0;
+  if (!bg && (waitpid(pid, &status, 0) != pid)) {
+    std::perror("waitpid");
+    return EXIT_FAILURE;
+  }
+
+  // Save the exit status in the environment
+  setenv("?", std::to_string(status).c_str(), true);
+  return EXIT_SUCCESS;
+}
+
+void Sushi::prevent_interruption()
 {
-  (void)bg;
-  int pid = fork();
-  if (pid == -1){
-	std::perror("folk");
-	return EXIT_FAILURE;
-  }
-  if (pid == 0){
-	char* const* argv = exe->vector2array();
-	if(execvp(argv[0],argv) == -1){
-	  // DZ: Incorerct use of perror
-	  // std::perror("execvp");
-	  std::perror(argv[0]);
-	  exit(EXIT_FAILURE);
-	}
-	exe->free_array(argv);
-  }else{
-	int status;
-	if(waitpid(pid,&status,0) == -1) {
-	  std::perror("waitpid");
-	  return EXIT_FAILURE;
-	}
-  } return 1;
-}
-
-void Sushi::prevent_interruption() {
-  struct sigaction interrupt_action;
-  interrupt_action.sa_handler = Sushi::refuse_to_die;
-  interrupt_action.sa_flags = SA_RESTART;
-  sigaction(SIGINT, &interrupt_action, NULL);
-}
-
-void Sushi::refuse_to_die(int signo) {
-  if (signo == SIGINT){
-	std::cerr<<"\nType exit to exit the shell"<<std::endl;
+  struct sigaction sa;
+  sa.sa_handler = refuse_to_die;
+  // Restart the read() system call
+  sa.sa_flags = SA_RESTART;
+  if (sigaction(SIGINT, &sa, nullptr) != 0) {
+    std::perror("sigaction");
+    std::exit(EXIT_FAILURE);
   }
 }
 
-void Sushi::mainloop() {
-  // Must be implemented
+void Sushi::refuse_to_die(int signo)
+{
+  UNUSED(signo);
+  std::cerr << "Type exit to exit the shell" << '\n';
 }
 
-char* const* Program::vector2array() {
-  char** argv = new char*[args->size()+1];
-  for (size_t i = 0; i < args->size(); ++i){
-    // DZ: Do not copy data without necessity. It's a `char* CONST*`
-	size_t len = args->at(i)->size();
-	argv[i] = new char[len+1];
-	std::memcpy(argv[i], args->at(i)->c_str(), len+1);
+void Sushi::mainloop()
+{
+  while (!get_exit_flag()) {
+    const char *prompt = std::getenv("PS1");
+    std::cout << (prompt ? prompt : DEFAULT_PROMPT);
+    std::cout.flush();  // Ensure prompt is displayed immediately
+    
+    const std::string command = read_line(std::cin);
+    
+    if (!parse_command(command) && !re_execute()) {	
+      store_to_history(command); // Do not insert the bangs (!)
+    }
   }
-  argv[args->size()] = nullptr;
-  return argv;
 }
 
-void Program::free_array(char* const argv[]) {
-  // DZ: See above
-  for (size_t i = 0; argv[i] != nullptr; ++i){
-	free(argv[i]);
+char* const* Program::vector2array()
+{
+  // std::vector<std::string*> *args -> char *const argv[]
+  assert(args);
+  
+  size_t size = args->size();
+  char** array = new char*[size + 1]; // Allocate an array of char*
+  
+  for (size_t i = 0; i < size; ++i) {
+    assert((*args)[i]);
+    array[i] = const_cast<char*>((*args)[i]->c_str()); // Copy string content
   }
-  delete[] argv;
+  
+  array[size] = nullptr; // Null-terminate the array
+  return array;
 }
 
-Program::~Program() {
+Program::~Program()
+{
   // Do not implement now
 }
-
