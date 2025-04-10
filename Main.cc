@@ -9,14 +9,16 @@ Sushi my_shell;
 int main(int argc, char *argv[]){
   for (int i = 1; i < argc; ++i) {
     if (!my_shell.read_config(argv[i], false)) {
-      std::cerr << "Error: Failed to process script '" << argv[i] << "'" << std::endl;
+      // DZ: Already reported by read_config
+      // std::cerr << "Error: Failed to process script '" << argv[i] << "'" << std::endl;
       return EXIT_FAILURE;
     }
     if (my_shell.get_exit_flag()){
       return EXIT_SUCCESS;
     }
   }
-  if (argc == 1 && !my_shell.get_exit_flag()) {
+  // DZ: Always run the main loop
+  if (/*argc == 1 &&*/ !my_shell.get_exit_flag()) {
     my_shell.mainloop();
   }
   return EXIT_SUCCESS;

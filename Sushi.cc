@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <csignal>
 #include <cassert>
+#include <cstring>
 #include <sys/wait.h>
 #include "Sushi.hh"
 
@@ -14,9 +15,12 @@ std::string Sushi::read_line(std::istream &in)
   if(!std::getline (in, line)) {// Has the operation failed?
     if(!in.eof()) { 
       std::perror("getline");
-      my_shell.set_exit_flag();
-    }
-    in.clear();
+      // DZ: No. 
+      //my_shell.set_exit_flag();
+      in.clear();
+   }
+    // DZ: And do not clear the flags
+    //in.clear();
     return "";
   }
     
@@ -47,14 +51,14 @@ bool Sushi::read_config(const char *fname, bool ok_if_missing)
   }
 
   // Read the config file
-  while(!config_file.eof()&& !get_exit_flag()) {
+  while(!config_file.eof()/*&& !get_exit_flag()*/) {
     std::string line = read_line(config_file);
     if(!parse_command(line)) {
       store_to_history(line);
     }
-    if (get_exit_flag()){
+    /*if (get_exit_flag()){
       break;
-    }
+      }*/
   }
   
   return true; 
@@ -135,8 +139,10 @@ int Sushi::spawn(Program *exe, bool bg)
     if (WIFEXITED(status)) exit_status = WEXITSTATUS(status);
     else exit_status = -1;
   }else exit_status = 0;
- 
-  Sushi::putenv(new std::string("EXIT_STATUS"), new std::string(std::to_string(exit_status)));
+
+  // DZ: wrong env var name
+  // Sushi::putenv(new std::string("EXIT_STATUS"), new std::string(std::to_string(exit_status)));
+  Sushi::putenv(new std::string("?"), new std::string(std::to_string(exit_status)));
 
   return EXIT_SUCCESS;
 }
@@ -160,18 +166,19 @@ void Sushi::refuse_to_die(int signo) {
 void Sushi::mainloop() {
   while(!get_exit_flag()) {
     const char* ps1 = std::getenv("PS1");
-    if (ps1) {
+    if (ps1 && strlen(ps1)) {
       std::cout << ps1;
     } else {
-      std::cout << Sushi::DEFAULT_PROMPT;
+      std::cout << /*Sushi::*/DEFAULT_PROMPT;
     } std::cout.flush();
-    std::string command = Sushi::read_line(std::cin);
+    std::string command = /*Sushi::*/read_line(std::cin);
     if (std::cin.eof()){
-      set_exit_flag();
+      // DZ: No point in setting exit flag and the breaking
+      // set_exit_flag();
       break;
     }
     if (command.empty()) continue;
-    if(!Sushi::parse_command(command)) {
+    if(!/*Sushi::*/parse_command(command)) {
       // Re-execute from history if needed
       if(!re_execute()) {
         // Do not insert the bangs (!)
