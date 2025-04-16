@@ -31,7 +31,11 @@ public:
   ~Program();
   void set_pipe(Program *pipe) { this->pipe = pipe; };
   void set_redir(Redirection &redir) { this->redir = redir; };
-  
+ 
+  std::string progname() const {return *args->at(0);} 
+  Program *get_pipe() const { return pipe; } // Getter method for pipe 
+
+
   // Helper method(s)
   // Converts the args to whatever `execvp` expects
   char* const* vector2array();
