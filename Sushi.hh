@@ -14,9 +14,12 @@ public:
   void set_out1(std::string *fname) { redir_out1 = fname; }
   void set_out2(std::string *fname) { redir_out2 = fname; }
   void set_in(std::string *fname)   { redir_in = fname; }
-  void set_in(Redirection &redir)   {
-    redir_in = redir.redir_out1 ? redir.redir_out1 : redir.redir_out2;
-  }
+  void set_in(Redirection &redir)   { redir_in = redir.redir_in;}
+
+  // Add getter methods for private members
+  const std::string *get_redir_in() const { return redir_in; }
+  const std::string *get_redir_out1() const { return redir_out1; }
+  const std::string *get_redir_out2() const { return redir_out2; }
 };
 
 // The program to be executed
@@ -36,7 +39,7 @@ public:
   std::string progname() const {return *args->at(0);} 
   Program *get_pipe() const { return pipe; } // Getter method for pipe 
   void clear_redir() { redir.clear(); }
-
+  const Redirection& get_redir() const { return redir; } //Getter method for redir
 
   // Helper method(s)
   // Converts the args to whatever `execvp` expects

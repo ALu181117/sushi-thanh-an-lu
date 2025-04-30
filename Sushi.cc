@@ -7,6 +7,9 @@
 #include <cassert>
 #include <sys/wait.h>
 #include "Sushi.hh"
+#include <fcntl.h>
+#include <unistd.h>
+#include <limits.h>
 
 Sushi::Sushi()
 {
@@ -138,6 +141,39 @@ int Sushi::spawn(Program *exe, bool bg) {
         }
 
         if (pid == 0) {
+	    // New code start
+	    const Redirection &redir = prog->get_redir();
+	    const std::string *redir_in = redir.get_redir_in();
+            const std::string *redir_out1 = redir.get_redir_out1();
+            const std::string *redir_out2 = redir.get_redir_out2();
+            if (redir_in) {
+                input_fd = open(redir_in->c_str(), O_RDONLY);
+                if (input_fd == -1) {
+                    perror("open (input redirection)");
+                    exit(EXIT_FAILURE);
+                }
+                dup2(input_fd, STDIN_FILENO);
+                close(input_fd);
+            }
+            if (redir_out1) {
+                int output_fd = open(redir_out1->c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+                if (output_fd == -1) {
+                    perror("open (output redirection)");
+                    exit(EXIT_FAILURE);
+                }
+                dup2(output_fd, STDOUT_FILENO);
+                close(output_fd);
+            }
+            if (redir_out2) {
+                int output_fd = open(redir_out2->c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644);
+                if (output_fd == -1) {
+                    perror("open (output redirection)");
+                    exit(EXIT_FAILURE);
+                }
+                dup2(output_fd, STDOUT_FILENO);
+                close(output_fd);
+            }
+	    // New code end
             if (input_fd != -1) {
                 dup2(input_fd, STDIN_FILENO);
                 close(input_fd);
@@ -210,12 +246,22 @@ void Sushi::mainloop()
 // Two new methods to implement
 void Sushi::pwd()
 {
-  std::cerr << "pwd: not implemented yet" << std::endl;
+  char cwd[PATH_MAX];
+    if (getcwd(cwd, sizeof(cwd)) != nullptr) {
+        std::cout << cwd << std::endl;
+    } else {
+        perror("getcwd"); 
+    }
 }
 
 void Sushi::cd(std::string *s)
 {
-  std::cerr << "cd(" << *s << "): not implemented yet" << std::endl;
+  if (chdir(s->c_str()) == 0) {
+  } else {
+      perror("chdir"); 
+  }
+
+  delete s;
 }
 
 char* const* Program::vector2array()
